@@ -19,4 +19,5 @@ A command plugin for Git (that's it).
 `git task [-i] <type> <issue-ID> <description>`
 
 > Example: git task feat JIRA-123 description -i
+> 
 > Result branch: feat/JIRA-123-description
