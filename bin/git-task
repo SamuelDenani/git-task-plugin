@@ -1,0 +1,65 @@
+#!/bin/sh
+
+set -e
+
+INTERACTIVE=false
+CLEAN_ARGS=""
+
+for arg in "$@"; do
+  if [ "$arg" = "-i" ]; then
+    INTERACTIVE=true
+  else
+    CLEAN_ARGS="$CLEAN_ARGS $arg"
+  fi
+done
+
+set -f
+set -- $CLEAN_ARGS
+set +f
+
+if [ "$#" -lt 3 ]; then
+  echo "Error: Insufficient arguments."
+  echo "Usage: git task [-i] <type> <issue-ID> <description>"
+  echo "Example: git task feat JIRA-123 description -i\n"
+  exit 1
+fi
+
+action="$1"
+ticket="$2"
+
+shift 2
+description="$*"
+
+ticket=$(echo "$ticket" | tr '[:lower:]' '[:upper:]')
+slug=$(echo "$description" |
+  tr '[:upper:]' '[:lower:]' |
+  tr ' ' '-' |
+  tr -cd 'a-z0-9-' |
+  sed 's/--*/-/g')
+
+branch="$action/$ticket-$slug"
+
+if [ "$INTERACTIVE" = true ]; then
+  echo "\n---------------------------------------------------"
+  echo "The following branch will be created:"
+  printf "\033[1;32m%s\033[0m\n" "$branch"
+  echo "---------------------------------------------------\n"
+
+  printf "Proceed with creation? [Y/n]: "
+  read -r response
+  response=${response:-Y}
+
+  case "$response" in
+  [yY][eE][sS] | [yY]) ;;
+  *)
+    echo "Command canceled by user."
+    exit 0
+    ;;
+  esac
+fi
+echo "Creating branch '$branch'.../n"
+
+git checkout -b "$branch"
+git push -u origin HEAD
+
+echo "\nCurrent branch: '$branch'"
